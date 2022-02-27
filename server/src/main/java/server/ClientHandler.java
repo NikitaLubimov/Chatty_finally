@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 
 public class ClientHandler {
@@ -28,6 +29,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(120000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -51,6 +53,7 @@ public class ClientHandler {
                                         sendMsg("/auth_ok " + nickname);
                                         authenticated = true;
                                         server.subscribe(this);
+                                        socket.setSoTimeout(0);
                                         break;
                                     } else {
                                         sendMsg("Учетная запись уже используется");
@@ -94,7 +97,8 @@ public class ClientHandler {
                             server.broadcastMsg(this, str);
                         }
                     }
-
+                } catch (SocketTimeoutException e) {
+                    sendMsg("/end");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
